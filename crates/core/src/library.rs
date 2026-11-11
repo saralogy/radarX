@@ -12,8 +12,10 @@ use crate::{CoreError, Result};
 
 pub const DISC_MANIFEST: &str = "disc.json";
 pub const INDEX_DIR: &str = "search-index";
-/// Text fed to the snippet generator per result; bounds worst-case latency.
-const SNIPPET_SOURCE_CHARS: usize = 20_000;
+/// Leading HTML bytes scanned per result for a snippet; bounds worst-case
+/// latency on very long articles.
+const SNIPPET_SOURCE_BYTES: usize = 96 << 10;
+const SNIPPET_THREADS: usize = 4;
 
 /// `disc.json`, written by `disc-builder` next to the ZIM files.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -289,20 +291,29 @@ impl Library {
         let mut out = Vec::new();
         if let Some(index) = &self.index {
             let hits = index.search(query, limit)?;
-            for h in &hits.hits {
-                let Ok(ds) = self.dataset(&h.dataset) else { continue };
-                let snippet = ds
-                    .archive
-                    .get(&h.path)
-                    .ok()
-                    .flatten()
-                    .and_then(|e| ds.archive.read(&e).ok())
-                    .and_then(|raw| {
-                        let text = html::extract_text(&String::from_utf8_lossy(&raw)).body;
-                        let cut = text.char_indices().nth(SNIPPET_SOURCE_CHARS).map_or(text.len(), |(i, _)| i);
-                        hits.snippet(&text[..cut])
-                    })
-                    .unwrap_or_default();
+            // Snippets need the article text, i.e. one cluster decompression
+            // and one HTML pass per hit: the dominant cost of a query. Spread
+            // it over a few threads.
+            let rows: Vec<(Arc<Dataset>, &crate::search::Hit)> =
+                hits.hits.iter().filter_map(|h| self.dataset(&h.dataset).ok().map(|d| (d, h))).collect();
+            let snippet = |ds: &Dataset, path: &str| -> String {
+                let Some(mut raw) = ds.archive.get(path).ok().flatten().and_then(|e| ds.archive.read(&e).ok()) else {
+                    return String::new();
+                };
+                raw.truncate(SNIPPET_SOURCE_BYTES);
+                let text = html::extract_text(&String::from_utf8_lossy(&raw)).body;
+                hits.snippet(&text).unwrap_or_default()
+            };
+            let workers = rows.len().clamp(1, SNIPPET_THREADS);
+            let per = rows.len().div_ceil(workers).max(1);
+            let snippets: Vec<String> = std::thread::scope(|scope| {
+                let handles: Vec<_> = rows
+                    .chunks(per)
+                    .map(|chunk| scope.spawn(|| chunk.iter().map(|(ds, h)| snippet(ds, &h.path)).collect::<Vec<_>>()))
+                    .collect();
+                handles.into_iter().flat_map(|h| h.join().unwrap_or_default()).collect()
+            });
+            for ((ds, h), snippet) in rows.iter().zip(snippets.into_iter().chain(std::iter::repeat(String::new()))) {
                 out.push(SearchResult {
                     dataset_id: ds.info.id.clone(),
                     dataset_name: ds.info.name.clone(),

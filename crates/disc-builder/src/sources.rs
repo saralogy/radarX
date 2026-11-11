@@ -312,3 +312,36 @@ pub fn generated_index(name: &str, docs: &[Doc]) -> Doc {
     html.push_str("</ul></body></html>");
     Doc { path: "_contents.html".into(), title: format!("{name}: contents"), mime: "text/html".into(), front: false, data: Source::Bytes(html.into_bytes()) }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resolves_references_inside_the_archive() {
+        assert_eq!(resolve_ref("A/Fire", "../I/flame.png").as_deref(), Some("I/flame.png"));
+        assert_eq!(resolve_ref("wiki/a/b.html", "./c%20d.png?x=1#y").as_deref(), Some("wiki/a/c d.png"));
+        assert_eq!(resolve_ref("a/b", "/css/s.css").as_deref(), Some("css/s.css"));
+        assert_eq!(resolve_ref("a", "../../../etc/passwd").as_deref(), Some("etc/passwd"));
+        assert_eq!(resolve_ref("a", "https://example.org/x.png"), None);
+        assert_eq!(resolve_ref("a", "//cdn/x.png"), None);
+        assert_eq!(resolve_ref("a", "data:image/png;base64,AAAA"), None);
+        assert_eq!(resolve_ref("a", "#top"), None);
+    }
+
+    #[test]
+    fn strips_gutenberg_header_and_footer() {
+        let text = "The Project Gutenberg eBook of X\n\n*** START OF THE PROJECT GUTENBERG EBOOK X ***\n\nA Title\n\nBody text.\n\n*** END OF THE PROJECT GUTENBERG EBOOK X ***\nLicense blah";
+        let body = strip_gutenberg_boilerplate(text);
+        assert!(body.contains("A Title") && body.contains("Body text."));
+        assert!(!body.contains("Gutenberg") && !body.contains("License blah"));
+        assert_eq!(strip_gutenberg_boilerplate("plain"), "plain");
+    }
+
+    #[test]
+    fn finds_article_resources() {
+        let refs = html_refs("A/Fire", r#"<img src="../I/a.png" srcset="../I/b.png 2x"><link rel="stylesheet" href="../-/s.css"><img src="http://x/y.png">"#);
+        assert_eq!(refs, ["I/a.png", "I/b.png", "-/s.css"]);
+        assert_eq!(css_refs("-/s.css", "a{background:url('../I/bg.png')} @font-face{src:url(f.woff2)}"), ["I/bg.png", "-/f.woff2"]);
+    }
+}
