@@ -1,0 +1,19 @@
+[package]
+name = "sd-core"
+description = "Survival Disc core: library of ZIM datasets, HTML sanitiser, full-text search"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+sd-zim.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+lol_html = "2"
+tantivy = { version = "0.24", default-features = false, features = ["mmap", "stopwords", "lz4-compression"] }
+fastrand = "2"
+
+[dev-dependencies]
+tempfile.workspace = true

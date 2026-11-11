@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = ["crates/zim", "crates/core", "crates/ffi", "crates/disc-builder"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+sd-zim = { path = "crates/zim" }
+sd-core = { path = "crates/core" }
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tempfile = "3"
+
+# Mobile release profile: size first, no unwinding.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+opt-level = "s"
+
+# Decompression and search hot paths stay speed-optimised.
+[profile.release.package.zstd-sys]
+opt-level = 3
+[profile.release.package.tantivy]
+opt-level = 3

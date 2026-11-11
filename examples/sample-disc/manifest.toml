@@ -1,0 +1,26 @@
+# Sample disc: exercises every pipeline stage with content that ships in-repo.
+#   cargo run --release -p disc-builder -- build examples/sample-disc/manifest.toml --out out/sample
+
+[disc]
+id = "sample-disc"
+title = "Survival Disc (sample)"
+version = "0"
+budget_mb = 5
+
+[[dataset]]
+id = "field-notes"
+name = "Field Notes"
+license = "CC0-1.0"
+attribution = "Survival Disc sample authors"
+license_file = "licenses/CC0-1.0-notice.txt"
+budget_mb = 1
+source = { type = "html-dir", path = "field-notes" }
+
+[[dataset]]
+id = "manuals"
+name = "Manuals"
+license = "CC0-1.0"
+attribution = "Survival Disc sample authors"
+license_file = "licenses/CC0-1.0-notice.txt"
+source = { type = "text-dir", path = "manuals" }
+images = { mode = "keep" }

@@ -1,0 +1,89 @@
+# Survival Essentials v1: the completeness contract for the bundled disc.
+#
+# "Complete" means: every dataset below is shipped whole, or (where an include
+# list is given) every listed article is present with the resources it needs.
+# The build fails if a listed article is missing or a budget is exceeded.
+#
+# Budgets are allocations, not measurements. The first full build produces
+# the real numbers; adjust image settings and lists until it passes.
+#
+#   disc-builder build discs/survival-essentials-v1.toml --out out/survival-essentials-v1
+#
+# Source ZIMs come from https://download.kiwix.org/zim/ into discs/sources/
+# (not committed). Pin exact file names so a build is reproducible.
+
+[disc]
+id = "survival-essentials"
+title = "Survival Essentials"
+version = "1"
+# ZIMs + search index + licences. Leaves ~200 MB under the 2.0 GB ceiling for
+# the app binary and user data.
+budget_mb = 1800
+
+[[dataset]]
+id = "wikimed"
+name = "WikiMed Medical Encyclopedia"
+license = "CC-BY-SA-4.0"
+attribution = "Wikipedia contributors; WikiProject Medicine. Each article's history lists its authors."
+source_url = "https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Medicine"
+license_file = "licenses/CC-BY-SA-4.0.txt"
+budget_mb = 950
+source = { type = "zim", path = "sources/wikipedia_en_medicine_maxi.zim" }
+# Diagnostic images keep more resolution than the rest of the disc.
+images = { mode = "webp", max_width = 1200, quality = 80 }
+
+[[dataset]]
+id = "wikipedia-essentials"
+name = "Wikipedia Essentials"
+license = "CC-BY-SA-4.0"
+attribution = "Wikipedia contributors. Each article's history lists its authors."
+source_url = "https://en.wikipedia.org/"
+license_file = "licenses/CC-BY-SA-4.0.txt"
+budget_mb = 350
+source = { type = "zim", path = "sources/wikipedia_en_all_maxi.zim", include = "lists/wikipedia-essentials.txt" }
+images = { mode = "webp", max_width = 800, quality = 75 }
+
+[[dataset]]
+id = "se-outdoors"
+name = "The Great Outdoors (Stack Exchange)"
+license = "CC-BY-SA-4.0"
+attribution = "Stack Exchange contributors; every post names its author and links to the original."
+source_url = "https://outdoors.stackexchange.com/"
+license_file = "licenses/CC-BY-SA-4.0.txt"
+budget_mb = 50
+source = { type = "zim", path = "sources/outdoors.stackexchange.com_en_all.zim" }
+
+[[dataset]]
+id = "se-diy"
+name = "Home Improvement (Stack Exchange)"
+license = "CC-BY-SA-4.0"
+attribution = "Stack Exchange contributors; every post names its author and links to the original."
+source_url = "https://diy.stackexchange.com/"
+license_file = "licenses/CC-BY-SA-4.0.txt"
+budget_mb = 130
+source = { type = "zim", path = "sources/diy.stackexchange.com_en_all.zim" }
+images = { mode = "webp", max_width = 640, quality = 70 }
+
+[[dataset]]
+id = "classics"
+name = "Classic Books"
+license = "Public-Domain"
+attribution = "Original authors; texts sourced from public-domain transcriptions."
+license_file = "licenses/PUBLIC-DOMAIN.txt"
+budget_mb = 120
+# Plain-text files, one per title, each cleared for US, EU and UK.
+source = { type = "text-dir", path = "sources/classics" }
+
+[[dataset]]
+id = "field-manuals"
+name = "Field Manuals and Preparedness Guides"
+license = "Public-Domain"
+attribution = "United States Government (Department of the Army, FEMA, CDC)."
+license_file = "licenses/PUBLIC-DOMAIN.txt"
+budget_mb = 60
+# HTML conversions of US-government works (public domain under 17 U.S.C. 105).
+source = { type = "html-dir", path = "sources/field-manuals" }
+images = { mode = "webp", max_width = 800, quality = 70 }
+
+# WikiHow is deliberately absent: CC BY-NC-SA forbids a paid product and the
+# builder rejects NC licences unless commercial_license_ack = true.

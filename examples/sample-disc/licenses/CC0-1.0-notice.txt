@@ -1,0 +1,8 @@
+Sample content for the Survival Disc build pipeline.
+
+To the extent possible under law, the authors have waived all copyright and
+related or neighbouring rights to this sample content (CC0 1.0 Universal).
+Full legal code: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+This text exists to exercise the pipeline. It is not vetted survival or
+medical advice.

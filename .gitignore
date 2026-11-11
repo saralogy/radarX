@@ -1,0 +1,9 @@
+target/
+/out/
+*.zim
+!crates/**/tests/data/*.zim
+.DS_Store
+mobile/android/app/src/main/jniLibs/
+mobile/android/app/src/main/kotlin/uniffi/
+mobile/ios/Generated/
+mobile/ios/*.xcframework/
